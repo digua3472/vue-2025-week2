@@ -33,9 +33,28 @@
         <p>UID: {{ user.uid }}</p>
         <p>nickname: {{ user.nickname }}</p>
     </div>
-    <div v-if="else">
+    <div v-else>
         <p>你還沒有登入</p>
     </div>
+
+    <hr>
+
+    <h2>待辦事項</h2>
+    <div v-if="token">
+        <label for="add-todo">新增待辦事項</label>
+        <br>
+        <input type="text" id="add-todo" v-model="newTodo.content">
+        <button type="button" @click="addTodo">新增</button>
+        <br>
+        <h3>待辦清單</h3>
+        <div v-for="todo in todos" :key="todo.id">
+            <input type="checkbox" name="" id="">
+            <label for="">{{  }}</label>
+        </div>
+
+        {{ todos }}
+    </div>
+
 </template>
 
 
@@ -77,7 +96,7 @@ const signIn = async () => {
         console.log(res);
         signInRes.value = res.data.token;
         // 寫入token至cookie
-        document.cookie =  `customTodoToken=${res.value.token};path=/`
+        document.cookie = `customTodoToken=${res.data.token};path=/`;
     } catch (error) {
         console.log("錯誤");
         console.log(error);
@@ -90,17 +109,57 @@ const user = ref({
     uid: ''
 })
 
+// 讀取cookie裡的token
+const token = ref('document.cookie.replace(/(?:^|.*;\s*)customTodoToken\s*=\s*([^;]*).*$/i,"$1")');
+
 onMounted(async() => {
-    // 讀取cookie裡的token
-    const token = document.cookie.replace(/(?:^|.*;\s*)customTodoToken\s*=\s*([^;]*).*$/i,
-    "$1");
     const res = await axios.get(`${api}/users/checkout`, {
         headers: {
-            Authorization: token
+            Authorization: token.value
         }
     })
     user.value = res.data;
 })
+
+// todo
+const todos = ref([]);
+
+
+// 取得todo資料
+const getTodos = async () => {
+    try {
+        const res = await axios.get(`${api}/todos`, {
+            headers: {
+                Authorization: token.value
+            }
+        });
+        console.log(res);
+        todos.value = res.data.data;
+    } catch (error) {
+        console.log("錯誤");
+        console.log(error);
+    }
+}
+
+// 新增待辦事項功能
+const newTodo = ref({
+    content: ''
+});
+
+const addTodo = async () => {
+    try {
+        const res = await axios.post(`${api}/todos`, newTodo.value, {
+            headers: {
+                Authorization: token.value
+            }
+        });
+        console.log(res);
+        getTodos();
+    } catch (error) {
+        console.log("錯誤");
+        console.log(error);
+    }
+}
 
 
 
